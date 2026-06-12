@@ -18,21 +18,22 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Theos
-        uses: actions/checkout@v3
-        with:
-          repository: theos/theos
-          ref: master
-          path: theos
-          submodules: recursive
-
-      - name: Setup iOS SDK
+      - name: Setup Theos and SDKs
         run: |
-          git clone https://github.com/theos/sdks.git theos/sdks
-          echo "THEOS=$PWD/theos" >> $GITHUB_ENV
+          # Clone Theos
+          git clone --depth=1 https://github.com/theos/theos.git ~/theos
+          
+          # Clone iOS SDKs
+          git clone --depth=1 https://github.com/theos/sdks.git ~/theos/sdks
+          
+          # Set THEOS environment variable
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       - name: Build Package
+        env:
+          THEOS: ${{ env.THEOS }}
         run: |
+          export PATH=$THEOS/bin:$PATH
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
@@ -40,3 +41,4 @@ jobs:
         with:
           name: OverlayIOSTOOL-Package
           path: packages/*.deb
+        if: success()
