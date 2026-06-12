@@ -18,39 +18,13 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Theos and SDKs
-        run: |
-          # Create theos directory
-          mkdir -p ~/theos
-          
-          # Download and extract Theos using curl with fallback to wget
-          echo "Downloading Theos..."
-          cd ~
-          curl -L --retry 3 --connect-timeout 20 https://github.com/theos/theos/archive/master.tar.gz 2>/dev/null | tar xz && mv theos-master ~/theos-temp && rm -rf ~/theos && mv ~/theos-temp ~/theos || wget -q -O - https://github.com/theos/theos/archive/master.tar.gz | tar xz && mv theos-master ~/theos-temp && rm -rf ~/theos && mv ~/theos-temp ~/theos
-          
-          # Download and extract iOS SDKs
-          echo "Downloading iOS SDKs..."
-          mkdir -p ~/theos/sdks
-          cd ~/theos/sdks
-          curl -L --retry 3 --connect-timeout 20 https://github.com/theos/sdks/archive/master.tar.gz 2>/dev/null | tar xz --strip-components=1 || wget -q -O - https://github.com/theos/sdks/archive/master.tar.gz | tar xz --strip-components=1
-          
-          # Verify setup
-          echo "Theos setup complete"
-          ls -la ~/theos/bin 2>/dev/null || echo "Theos bin not found"
-          
-          # Set THEOS environment variable
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+      - name: Setup Theos
+        uses: theos/theos-action@v1
 
       - name: Build Package
         run: |
-          export THEOS=$HOME/theos
-          export PATH=$THEOS/bin:$PATH
-          cd $GITHUB_WORKSPACE
-          echo "THEOS=$THEOS"
-          echo "PATH=$PATH"
-          make package FINALPACKAGE=1 || (echo "Build failed, checking environment:" && ls -la ~/theos && which makefiles)
+          make package FINALPACKAGE=1
 
-          
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
