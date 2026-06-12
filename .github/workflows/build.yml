@@ -50,12 +50,14 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       - name: Build Package
-        env:
-          THEOS: ${{ env.THEOS }}
         run: |
+          export THEOS=$HOME/theos
           export PATH=$THEOS/bin:$PATH
           cd $GITHUB_WORKSPACE
-          make package FINALPACKAGE=1
+          echo "THEOS=$THEOS"
+          echo "PATH=$PATH"
+          make package FINALPACKAGE=1 || (echo "Build failed, checking environment:" && ls -la ~/theos && which makefiles)
+
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
