@@ -1,0 +1,42 @@
+name: Build iOS Tweak
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Tweak
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Theos
+        uses: actions/checkout@v3
+        with:
+          repository: theos/theos
+          ref: master
+          path: theos
+          submodules: recursive
+
+      - name: Setup iOS SDK
+        run: |
+          git clone https://github.com/theos/sdks.git theos/sdks
+          echo "THEOS=$PWD/theos" >> $GITHUB_ENV
+
+      - name: Build Package
+        run: |
+          make package FINALPACKAGE=1
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: OverlayIOSTOOL-Package
+          path: packages/*.deb
