@@ -14,17 +14,37 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Theos and SDKs
         run: |
-          # Clone Theos
-          git clone --depth=1 https://github.com/theos/theos.git ~/theos
+          # Create theos directory
+          mkdir -p ~/theos
+          
+          # Clone Theos repo
+          cd ~
+          git clone --depth=1 https://github.com/theos/theos.git theos 2>&1 || true
+          
+          # If clone failed, try alternate method
+          if [ ! -d ~/theos/.git ]; then
+            rm -rf ~/theos
+            curl -L https://github.com/theos/theos/archive/master.tar.gz | tar xz
+            mv theos-master ~/theos
+          fi
           
           # Clone iOS SDKs
-          git clone --depth=1 https://github.com/theos/sdks.git ~/theos/sdks
+          mkdir -p ~/theos/sdks
+          cd ~/theos
+          git clone --depth=1 https://github.com/theos/sdks.git sdks 2>&1 || true
+          
+          # If sdks clone failed, try curl method
+          if [ ! -d ~/theos/sdks/.git ]; then
+            rm -rf ~/theos/sdks
+            mkdir -p ~/theos/sdks
+            curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar xz -C ~/theos/sdks --strip-components=1
+          fi
           
           # Set THEOS environment variable
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
@@ -34,6 +54,7 @@ jobs:
           THEOS: ${{ env.THEOS }}
         run: |
           export PATH=$THEOS/bin:$PATH
+          cd $GITHUB_WORKSPACE
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
