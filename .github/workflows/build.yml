@@ -23,28 +23,20 @@ jobs:
           # Create theos directory
           mkdir -p ~/theos
           
-          # Clone Theos repo
+          # Download and extract Theos using curl with fallback to wget
+          echo "Downloading Theos..."
           cd ~
-          git clone --depth=1 https://github.com/theos/theos.git theos 2>&1 || true
+          curl -L --retry 3 --connect-timeout 20 https://github.com/theos/theos/archive/master.tar.gz 2>/dev/null | tar xz && mv theos-master ~/theos-temp && rm -rf ~/theos && mv ~/theos-temp ~/theos || wget -q -O - https://github.com/theos/theos/archive/master.tar.gz | tar xz && mv theos-master ~/theos-temp && rm -rf ~/theos && mv ~/theos-temp ~/theos
           
-          # If clone failed, try alternate method
-          if [ ! -d ~/theos/.git ]; then
-            rm -rf ~/theos
-            curl -L https://github.com/theos/theos/archive/master.tar.gz | tar xz
-            mv theos-master ~/theos
-          fi
-          
-          # Clone iOS SDKs
+          # Download and extract iOS SDKs
+          echo "Downloading iOS SDKs..."
           mkdir -p ~/theos/sdks
-          cd ~/theos
-          git clone --depth=1 https://github.com/theos/sdks.git sdks 2>&1 || true
+          cd ~/theos/sdks
+          curl -L --retry 3 --connect-timeout 20 https://github.com/theos/sdks/archive/master.tar.gz 2>/dev/null | tar xz --strip-components=1 || wget -q -O - https://github.com/theos/sdks/archive/master.tar.gz | tar xz --strip-components=1
           
-          # If sdks clone failed, try curl method
-          if [ ! -d ~/theos/sdks/.git ]; then
-            rm -rf ~/theos/sdks
-            mkdir -p ~/theos/sdks
-            curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar xz -C ~/theos/sdks --strip-components=1
-          fi
+          # Verify setup
+          echo "Theos setup complete"
+          ls -la ~/theos/bin 2>/dev/null || echo "Theos bin not found"
           
           # Set THEOS environment variable
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
